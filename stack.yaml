@@ -1,0 +1,10 @@
+flags: {}
+extra-package-dbs: []
+packages:
+- '.'
+extra-deps:
+- X11-xft-0.3.1
+- rosezipper-0.2
+- xmonad-0.12
+- xmonad-contrib-0.12
+resolver: lts-3.19
