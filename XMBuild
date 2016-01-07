@@ -1,0 +1,5 @@
+#!/bin/bash
+stack build &&
+stack install &&
+read -rsp $'Press enter to continue...\n' &&
+xmonad --restart

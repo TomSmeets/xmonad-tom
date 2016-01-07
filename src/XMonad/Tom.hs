@@ -11,12 +11,12 @@ import System.Exit                      (exitSuccess)
 import XMonad
 import XMonad.Actions.GridSelect
 import XMonad.Actions.SpawnOn           (spawnOn, manageSpawn)
-import XMonad.Hooks.DynamicLog          
+import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops        (ewmh)
 import XMonad.Hooks.ManageDocks         (manageDocks, avoidStruts)
 import XMonad.Hooks.SetWMName
 import XMonad.Layout.NoBorders          (smartBorders)
-import XMonad.Layout.PerWorkspace        
+import XMonad.Layout.PerWorkspace
 import XMonad.Layout.SimplestFloat
 import XMonad.StackSet                  (allWindows, greedyView, shift)
 import XMonad.Util.EZConfig             (additionalKeysP, additionalKeys)
@@ -89,28 +89,45 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
                          , logHook           = dynamicLogWithPP $ defaultPP
                          , focusFollowsMouse = False
                          }
-    `additionalKeysP` [ ("M-p",   spawn "j4-dmenu-desktop")                                                -- dmenu for .desktop files
+    `additionalKeysP` [ -- dmenu to lauch .desktop files
+                        ("M-p",   spawn "j4-dmenu-desktop")
 
+                      -- media controls
                       , ("M-f",   spawn "amixer set Capture toggle")
-                      , ("M-S-f", doBG)
+                      , ("M-S-f", spawn "amixer set Master toggle")
 
+                      -- movement
                       , ("M-r",   WS.runWS False) -- Go to workspace with treeselect
-                      , ("M-m",   WS.runWS True)  -- Move and go to workspace with treeselect
-
+                      , ("M-S-r", WS.runWS True)  -- Move and go to workspace with treeselect
                       , ("M-o",   WSH.doUndo)
                       , ("M-i",   WSH.doRedo)
 
-                      , ("M-q", spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Doing/xmonad-tom -x stack install && xmonad --restart")
-                      , ("M-S-q", void . runDialogX $ Node (Choice "root" (return ())) [ Node (Choice "logout"   $ closeAll >> io exitSuccess)               []
-                                                                                       , Node (Choice "restart"  $ closeAll >> spawn "sudo shutdown now -r") []
-                                                                                       , Node (Choice "shutdown" $ closeAll >> spawn "sudo shutdown now")    []
-                                                                                       ])
+                      -- util actions
+                      , ("M-u", void . runDialogX $ listToTree (Choice "" $ return ())
+                            [ Choice "Wallpaper" $ doBG
+                            ])
+
+                      -- xmonad actions
+                      , ("M-q", void . runDialogX $ listToTree (Choice "" $ return ())
+                            [ Choice "compile" $ spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Doing/xmonad-tom -x ./XMBuild"
+                            , Choice "restart" $ spawn "xmonad --restart"
+                            , Choice "xmobar"  $ io (BU.export B.config >> spawn "pkill xmobar; xmonad --restart")
+                            ])
+
+                      -- system actions
+                      , ("M-S-q", void . runDialogX $ listToTree (Choice "" $ return ())
+                            [ Choice "logout"   $ closeAll >> io exitSuccess
+                            , Choice "restart"  $ closeAll >> spawn "sudo shutdown now -r"
+                            , Choice "shutdown" $ closeAll >> spawn "sudo shutdown now"
+                            ])
                       ]
     `additionalKeys`  [ ((0, xF86XK_AudioLowerVolume), spawn "amixer set Master 5%-")
                       , ((0, xF86XK_AudioRaiseVolume), spawn "amixer set Master 5%+")
                       , ((0, xF86XK_AudioMute),        spawn "amixer set Master toggle")
                       ]
 
+listToTree :: a -> [a] -> Tree a
+listToTree r = Node r . map (`Node` [])
 
 doWSSpawns :: X ()
 doWSSpawns = do
@@ -119,21 +136,15 @@ doWSSpawns = do
   where
     findIdx name = show . W.index . label . fromJust . W.searchBelow ((==name) . W.name) . fromTree $ W.myTree
 
-myGSConfig :: GSConfig WorkspaceId
-myGSConfig = defaultGSConfig
-
 -- | Startup hook
 startup :: X ()
 startup = do
-    io (BU.export B.config) -- apply xmobar file
     setWMName "LG3D" -- to make java swing work
     doBG
 
+-- | Generate next wallpaper
+doBG :: X ()
 doBG = spawn "FractalArt && feh --bg-fill $HOME/.fractalart/wallpaper.bmp"
-
-showBG n = spawn $ "feh --bg-fill " ++ bgPath n
-mkBG   n = spawn $ "FractalArt -f " ++ bgPath n
-bgPath n = "$HOME/.fractalart/" ++ show n ++ ".bmp"
 
 -------------------------------------------
 
