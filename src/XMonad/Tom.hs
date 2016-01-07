@@ -4,7 +4,7 @@ module XMonad.Tom where
 import Control.Concurrent               (threadDelay)
 import Control.Monad
 import Data.Maybe
-import Data.Tree (flatten)
+import Data.Tree (Tree(..), flatten)
 import Data.Tree.Zipper
 import Graphics.X11.ExtraTypes.XF86
 import System.Exit                      (exitSuccess)
@@ -21,6 +21,8 @@ import XMonad.Layout.SimplestFloat
 import XMonad.StackSet                  (allWindows, greedyView, shift)
 import XMonad.Util.EZConfig             (additionalKeysP, additionalKeys)
 import XMonad.Util.Run                  (runProcessWithInput)
+
+import XMonad.Tom.UI.Dialog
 
 import qualified XMonad.Tom.XMobar as B
 import qualified XMonad.Tom.XMobarHs as BU
@@ -87,11 +89,7 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
                          , logHook           = dynamicLogWithPP $ defaultPP
                          , focusFollowsMouse = False
                          }
-    `additionalKeysP` [ ("M-S-q", closeAll >> spawn "sudo shutdown now")                                   -- Shutdown
-                      , ("M-S-r", closeAll >> spawn "sudo shutdown now -r")                                -- Reboot
-                      , ("M-S-l", closeAll >> io exitSuccess)                                              -- Logout
-
-                      , ("M-p",   spawn "j4-dmenu-desktop")                                                -- dmenu for .desktop files
+    `additionalKeysP` [ ("M-p",   spawn "j4-dmenu-desktop")                                                -- dmenu for .desktop files
 
                       , ("M-f",   spawn "amixer set Capture toggle")
                       , ("M-S-f", doBG)
@@ -103,7 +101,10 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
                       , ("M-i",   WSH.doRedo)
 
                       , ("M-q", spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Doing/xmonad-tom -x stack install && xmonad --restart")
-                      , ("M-w", io (BU.export B.config >> spawn "pkill xmobar; xmonad --restart"))
+                      , ("M-S-q", void . runDialogX $ Node (Choice "root" (return ())) [ Node (Choice "logout"   $ closeAll >> io exitSuccess)               []
+                                                                                       , Node (Choice "restart"  $ closeAll >> spawn "sudo shutdown now -r") []
+                                                                                       , Node (Choice "shutdown" $ closeAll >> spawn "sudo shutdown now")    []
+                                                                                       ])
                       ]
     `additionalKeys`  [ ((0, xF86XK_AudioLowerVolume), spawn "amixer set Master 5%-")
                       , ((0, xF86XK_AudioRaiseVolume), spawn "amixer set Master 5%+")
