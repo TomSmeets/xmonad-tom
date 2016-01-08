@@ -132,7 +132,6 @@ listToTree r = Node r . map (`Node` [])
 doWSSpawns :: X ()
 doWSSpawns = do
     spawnOn (findIdx "Browser")     "iceweasel"
-    spawnOn (findIdx "Programming") "gnome-terminal --working-directory $HOME/Programming"
   where
     findIdx name = show . W.index . label . fromJust . W.searchBelow ((==name) . W.name) . fromTree $ W.myTree
 
