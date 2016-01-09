@@ -14,6 +14,7 @@ import XMonad.Actions.SpawnOn           (spawnOn, manageSpawn)
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops        (ewmh)
 import XMonad.Hooks.ManageDocks         (manageDocks, avoidStruts)
+import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.SetWMName
 import XMonad.Layout.NoBorders          (smartBorders)
 import XMonad.Layout.PerWorkspace
@@ -23,13 +24,11 @@ import XMonad.Util.EZConfig             (additionalKeysP, additionalKeys)
 import XMonad.Util.Run                  (runProcessWithInput)
 
 import XMonad.Tom.UI.Dialog
-
-import qualified XMonad.Tom.XMobar as B
-import qualified XMonad.Tom.XMobarHs as BU
-
-import qualified XMonad.Tom.Workspace as W
-import qualified XMonad.Tom.Workspace.Select as WS
+import qualified XMonad.Tom.Workspace         as W
 import qualified XMonad.Tom.Workspace.History as WSH
+import qualified XMonad.Tom.Workspace.Select  as WS
+import qualified XMonad.Tom.XMobar            as B
+import qualified XMonad.Tom.XMobarHs          as BU
 
 main :: IO ()
 main = xmonad . ewmh =<< statusBar "xmobar" myPP toggleStrutsKey myConfig
@@ -46,23 +45,14 @@ myPP = defaultPP { ppCurrent         = const ""
                  , ppOrder           = id
                  , ppExtras          = []
                  }
--- |
--- Helper function which provides ToggleStruts keybinding
---
+
+-- | Helper function which provides ToggleStruts keybinding
 toggleStrutsKey :: XConfig t -> (KeyMask, KeySym)
 toggleStrutsKey XConfig{modMask = modm} = (modm, xK_b )
 
--- Extensible layouts
---
--- You can specify and transform your layouts by modifying these values.
--- If you change layout bindings be sure to use 'mod-shift-space' after
--- restarting (with 'mod-q') to reset your layout state to the new
--- defaults, as xmonad preserves your old layout settings by default.
---
-
 -- | The available layouts.  Note that each layout is separated by |||, which
 -- denotes layout choice.
-modes = tiled ||| Mirror tiled ||| simplestFloat ||| Full
+modes = tiled ||| Mirror tiled ||| Full
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
@@ -76,13 +66,12 @@ modes = tiled ||| Mirror tiled ||| simplestFloat ||| Full
      -- Percent of screen to increment by when resizing panes
      delta   = 5/100
 
-myLayout = onWorkspace "Float" simplestFloat
-         . avoidStruts  -- Don't cover the statusbar
+myLayout = avoidStruts  -- Don't cover the statusbar
          . smartBorders -- Don't show borders when in fullscreen
          $ modes
 
 myConfig = defaultConfig { terminal          = "gnome-terminal"
-                         , manageHook        = manageSpawn <+> manageDocks -- <+> mkWSHook myWorkspaces
+                         , manageHook        = myManage <+> manageSpawn <+> manageDocks
                          , workspaces        = map (show . W.index) $ flatten W.myTree --map label myWorkspaces
                          , startupHook       = onFirst (doWSSpawns) >> startup
                          , layoutHook        = myLayout
@@ -126,6 +115,8 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
                       , ((0, xF86XK_AudioRaiseVolume), spawn "amixer set Master 5%+")
                       , ((0, xF86XK_AudioMute),        spawn "amixer set Master toggle")
                       ]
+
+myManage = isFullscreen --> doFullFloat
 
 listToTree :: a -> [a] -> Tree a
 listToTree r = Node r . map (`Node` [])
