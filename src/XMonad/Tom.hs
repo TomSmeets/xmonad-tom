@@ -89,8 +89,9 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
                          , logHook           = dynamicLogWithPP $ defaultPP
                          , focusFollowsMouse = False
                          }
-    `additionalKeysP` [ -- dmenu to lauch .desktop files
+    `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to lauch .desktop files
                         ("M-p",   spawn "j4-dmenu-desktop")
+                      , ("M-S-p", spawn "dmenu_run")
 
                       -- media controls
                       , ("M-f",   spawn "amixer set Capture toggle")
