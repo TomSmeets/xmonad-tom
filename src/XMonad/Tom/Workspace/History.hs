@@ -27,7 +27,7 @@ redo = XS.get >>= redo' . getHistory
 
 addUndo' :: Int -> ([Int], Int, [Int]) -> X ()
 addUndo' i (us, c, rs) | c == i    = return ()
-                       | otherwise = XS.put (WSHistory (c:us, i, [])) -- maybe do not remove redos
+                       | otherwise = XS.put (WSHistory (c:us, i, rs)) -- maybe do not remove redos
 
 undo', redo' :: ([Int], Int, [Int]) -> X (Maybe Int)
 undo' (u:us, c, rs) = XS.put (WSHistory (us, u, c:rs)) >> return (Just u)
