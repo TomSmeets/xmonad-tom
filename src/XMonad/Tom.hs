@@ -94,7 +94,10 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
 
                       -- util actions
                       , ("M-u", void . runDialogX $ listToTree (Choice "" $ return ())
-                            [ Choice "Wallpaper" $ doBG
+                            [ Choice "Bright"    $ spawn "xbacklight -set 100"
+                            , Choice "Dim"       $ spawn "xbacklight -set 25"
+                            , Choice "Minimum"   $ spawn "xbacklight -set 10"
+                            , Choice "Wallpaper" $ doBG
                             ])
 
                       -- xmonad actions
