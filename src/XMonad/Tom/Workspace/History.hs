@@ -12,7 +12,7 @@ instance ExtensionClass WSHistory where
 
 goToWS, moveToWS :: Int -> X ()
 goToWS   i = (windows $ W.greedyView (show i))                    >> addUndo i
-moveToWS i = (windows $ W.greedyView (show i) . W.shift (show i)) >> addUndo i
+moveToWS i = (windows $ W.shift (show i))
 
 addUndo :: Int -> X ()
 addUndo i = XS.get >>= addUndo' i . getHistory

@@ -13,16 +13,21 @@ type ZTree     = TreePos Full
 
 myTree :: Tree Workspace
 myTree = idx $ nd "root" 
-           [ nd "Browser"     []
-           , nd "Programming" $ numbers 0
-           , nd "Home" $
-               [ nd "Aptitude" []
-               ] ++ numbers 0
-           , nd "Game" $
-               [ nd "Steam" []
+           [ nd "Left"
+               [ nd "Browser"     []
+               , nd "Programming" $ numbers 0
+               , nd "Home" $
+                   [ nd "Aptitude" []
+                   ] ++ numbers 0
+               , nd "Game" $ numbers 0
+               ]
+           , nd "Right"
+               [ nd "Docs" $ numbers 0 
+               , nd "Youtube" []
                , nd "Skype" []
+               , nd "Steam" []
                , nd "Telegram" []
-               ] ++ numbers 0
+               ]
            ]
   where
     nd x xs = Node (Workspace 0 x True) xs

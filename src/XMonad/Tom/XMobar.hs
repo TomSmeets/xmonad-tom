@@ -24,7 +24,7 @@ config = defaultConfig
    -- layout
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
-   , template = "%dynnetwork% | %memory% %multicpu% } %StdinReader% { %dropbox% | %volOut% | %volIn% | %steam% | %date%"
+   , template = "%multicpu% | %memory% | %dynnetwork% } %StdinReader% { %dropbox% | %volOut% | %volIn% | %steam% | %date% | %time%"
 
    -- general behavior
    , lowerOnStart =     True    -- send to bottom of window stack on start
@@ -50,37 +50,27 @@ config = defaultConfig
    --   see http://projects.haskell.org/xmobar/#system-monitor-plugins.
    , commands = 
         -- network activity monitor (dynamic interface resolution)
-        [ Run $ DynNetwork     [ "--template" , "<rx>▼ <tx>▲"
-                             , "--Low"      , "1000"       -- units: kB/s
-                             , "--High"     , "5000"       -- units: kB/s
-                             , "--low"      , "green"
-                             , "--normal"   , "orange"
-                             , "--high"     , "red"
-                             , "--minwidth" , "5"
-                             ] 10
+        [ Run $ DynNetwork [ "--template" , "<rx>▼ <tx>▲"
+                           , "--Low"      , "1000"       -- units: kB/s
+                           , "--High"     , "5000"       -- units: kB/s
+                           , "--low"      , "green"
+                           , "--normal"   , "orange"
+                           , "--high"     , "red"
+                           , "--minwidth" , "5"
+                           ] 10
         , Run $ StdinReader
 
         -- cpu activity monitor
-        , Run $ MultiCpu       [ "--template" , "<autovbar>"
-                             , "--Low"      , "50"         -- units: %
-                             , "--High"     , "85"         -- units: %
-                             , "--low"      , "green"
-                             , "--normal"   , "orange"
-                             , "--high"     , "red"
-                             , "--ppad"     , "3"
-                             ] 10
+        , Run $ MultiCpu [ "--template" , "<autovbar>"
+                         , "--Low"      , "50"         -- units: %
+                         , "--High"     , "85"         -- units: %
+                         , "--low"      , "green"
+                         , "--normal"   , "orange"
+                         , "--high"     , "red"
+                         ] 10
                             
         , Run $ XPropertyLog "_XMONAD_LOG"
-        -- cpu core temperature monitor
-        , Run $ CoreTemp       [ "--template" , "<autovbar>"
-                             , "--Low"      , "40"        -- units: °C
-                             , "--High"     , "60"        -- units: °C
-                             , "--low"      , "green"
-                             , "--normal"   , "orange"
-                             , "--high"     , "red"
-                             , "--minwidth" , "3"
-                             ] 10
-                          
+
         -- memory usage monitor
         , Run $ Memory         [ "--template" ,"<usedratio>%"
                              , "--Low"      , "20"        -- units: %
@@ -88,12 +78,13 @@ config = defaultConfig
                              , "--low"      , "green"
                              , "--normal"   , "orange"
                              , "--high"     , "red"
-                             , "--ppad"     , "3"
+                             , "--ppad"     , "2"
                              ] 10
 
         -- time and date indicator 
         --   (%F = y-m-d date, %a = day of week, %T = h:m:s time)
-        , Run $ Date "%F %T" "date" 10
+        , Run $ Date "%d-%m-%Y (<fc=lightblue>%a</fc>)" "date" 10
+        , Run $ Date "<fc=cyan>%T</fc>"                "time" 10
         , Run $ Com "volstatus" ["Capture", "IN"] "volIn" 10
         , Run $ Com "volstatus" ["Master",  "OUT"] "volOut" 10
         , Run $ Com "dropbox" ["status"] "dropbox" 10

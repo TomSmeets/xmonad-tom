@@ -11,15 +11,17 @@ import System.Exit                      (exitSuccess)
 import XMonad
 import XMonad.Actions.GridSelect
 import XMonad.Actions.SpawnOn           (spawnOn, manageSpawn)
+import XMonad.Actions.CycleWS
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops        (ewmh)
 import XMonad.Hooks.ManageDocks         (manageDocks, avoidStruts)
 import XMonad.Hooks.ManageHelpers
+import XMonad.Layout.Fullscreen         (fullscreenSupport)
 import XMonad.Hooks.SetWMName
 import XMonad.Layout.NoBorders          (smartBorders)
 import XMonad.Layout.PerWorkspace
 import XMonad.Layout.SimplestFloat
-import XMonad.StackSet                  (allWindows, greedyView, shift)
+import XMonad.StackSet                  hiding (workspaces)
 import XMonad.Util.EZConfig             (additionalKeysP, additionalKeys)
 import XMonad.Util.Run                  (runProcessWithInput)
 
@@ -70,14 +72,16 @@ myLayout = avoidStruts  -- Don't cover the statusbar
          . smartBorders -- Don't show borders when in fullscreen
          $ modes
 
-myConfig = defaultConfig { terminal          = "gnome-terminal"
-                         , manageHook        = myManage <+> manageSpawn <+> manageDocks
-                         , workspaces        = map (show . W.index) $ flatten W.myTree --map label myWorkspaces
-                         , startupHook       = onFirst (doWSSpawns) >> startup
-                         , layoutHook        = myLayout
-                         , logHook           = dynamicLogWithPP $ defaultPP
-                         , focusFollowsMouse = False
-                         }
+myConfig = fullscreenSupport $ defaultConfig 
+    { terminal          = "gnome-terminal"
+    , manageHook        = manageSpawn <+> manageDocks
+    , workspaces        = map (show . W.index) $ flatten W.myTree --map label myWorkspaces
+    , startupHook       = onFirst doWSSpawns >> startup
+    , layoutHook        = myLayout
+    , logHook           = dynamicLogWithPP $ defaultPP
+    , focusFollowsMouse = False
+    , borderWidth       = 2
+    }
     `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to lauch .desktop files
                         ("M-p",   spawn "j4-dmenu-desktop")
                       , ("M-S-p", spawn "dmenu_run")
@@ -99,7 +103,7 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
 
                       -- xmonad actions
                       , ("M-q", void . runDialogX $ listToTree (Choice "" $ return ())
-                            [ Choice "compile" $ spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Doing/xmonad-tom -x ./XMBuild"
+                            [ Choice "compile" $ spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Done/xmonad-tom -x ./XMBuild"
                             , Choice "restart" $ spawn "xmonad --restart"
                             , Choice "xmobar"  $ io (BU.export B.config >> spawn "pkill xmobar; xmonad --restart")
                             ])
@@ -110,12 +114,15 @@ myConfig = defaultConfig { terminal          = "gnome-terminal"
                             , Choice "restart"  $ closeAll >> spawn "sudo shutdown now -r"
                             , Choice "shutdown" $ closeAll >> spawn "sudo shutdown now"
                             ])
+                      , ("M-S-e", windows (\set -> set { current = swap (current set) (head $ visible set)
+                                                       , visible = swap (head (visible set)) (current set) : tail (visible set)}))
                       ]
-    `additionalKeys`  [ ((0, xF86XK_AudioLowerVolume), spawn "amixer set Master 5%-")
-                      , ((0, xF86XK_AudioRaiseVolume), spawn "amixer set Master 5%+")
+    `additionalKeys`  [ ((0, xF86XK_AudioLowerVolume), spawn "amixer set Master 2.5%-")
+                      , ((0, xF86XK_AudioRaiseVolume), spawn "amixer set Master 2.5%+")
                       , ((0, xF86XK_AudioMute),        spawn "amixer set Master toggle")
                       ]
 
+swap (Screen ws i d) (Screen ws' i' d') = Screen ws' i d
 myManage = isFullscreen --> doFullFloat
 
 listToTree :: a -> [a] -> Tree a
@@ -135,7 +142,9 @@ startup = do
 
 -- | Generate next wallpaper
 doBG :: X ()
-doBG = spawn "FractalArt && feh --bg-fill $HOME/.fractalart/wallpaper.bmp"
+doBG = spawn "FractalArt -w 1920 -h 1200 -f $HOME/.fractalart/wallpaperL.bmp\
+           \& FractalArt -w 1920 -h 1080 -f $HOME/.fractalart/wallpaperR.bmp & wait \
+           \&& feh --bg-fill $HOME/.fractalart/wallpaperL.bmp --bg-fill $HOME/.fractalart/wallpaperR.bmp"
 
 -------------------------------------------
 
