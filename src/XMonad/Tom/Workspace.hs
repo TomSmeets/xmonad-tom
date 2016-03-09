@@ -4,36 +4,16 @@ module XMonad.Tom.Workspace where
 import Control.Monad.State
 import Control.Applicative
 import Data.Tree
+import Data.List
 import Data.Maybe
 import Data.Tree.Zipper
 
-data Workspace = Workspace { index :: Int, name :: String, folded :: Bool } deriving Show
+data Workspace = Workspace { path :: String, name :: String, folded :: Bool } deriving Show
 
 type ZTree     = TreePos Full
 
-myTree :: Tree Workspace
-myTree = idx $ nd "root" 
-           [ nd "Left"
-               [ nd "Browser"     []
-               , nd "Programming" $ numbers 0
-               , nd "Home" $
-                   [ nd "Aptitude" []
-                   ] ++ numbers 0
-               , nd "Game" $ numbers 0
-               ]
-           , nd "Right"
-               [ nd "Docs" $ numbers 0 
-               , nd "Youtube" []
-               , nd "Skype" []
-               , nd "Steam" []
-               , nd "Telegram" []
-               ]
-           ]
-  where
-    nd x xs = Node (Workspace 0 x True) xs
-    numbers n = map (\c -> nd [c] []) . drop n $ ['a'..'f']
-    idx = fmap (\(w, i) -> w{ index = i }) . flatIdx
-
+treePath :: (a -> String) -> Tree a -> Tree (a, [String])
+treePath f (Node x xs) = Node (x, [f x]) (map (fmap (\(y, p) -> (y, f x:p)) . treePath f) xs)
 
 unfoldParents :: ZTree Workspace -> ZTree Workspace
 unfoldParents ws = doUp (setFold False) ws

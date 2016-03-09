@@ -16,7 +16,7 @@ import XMonad                    hiding (gets, get)
 import XMonad.Actions.GridSelect        (shadowWithKeymap)
 import XMonad.Layout.Decoration         (shrinkIt,  shrinkText, shrinkWhile) 
 import XMonad.Prompt                    (mkUnmanagedWindow)
-import XMonad.Tom.Workspace             (Workspace(..),  ZTree,  doAll,  myTree,  searchBelow,  setFold, unfoldParents, child)
+import XMonad.Tom.Workspace             (Workspace(..),  ZTree,  doAll,  searchBelow,  setFold, unfoldParents, child)
 import XMonad.Tom.Workspace.History
 import XMonad.Util.Font                 (initXMF,  printStringXMF,  releaseXMF,  textWidthXMF, XMonadFont)
 

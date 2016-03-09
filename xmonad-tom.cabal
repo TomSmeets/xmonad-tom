@@ -12,14 +12,47 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
-executable xmonad-tom
-  hs-source-dirs:      src
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
-                     , xmonad
-                     , xmonad-contrib
-                     , containers
-                     , X11
-                     , mtl
-                     , rosezipper
+library
+  hs-source-dirs:     src
+  exposed-modules:
+    XMonad.Tom
+    XMonad.Tom.UI.Dialog
+    XMonad.Tom.Workspace
+    XMonad.Tom.Workspace.History
+    XMonad.Tom.Workspace.Select
+    XMonad.Tom.XMobar
+    XMonad.Tom.XMobarHs
+  build-depends:      base >= 4.7 && < 5
+                    , xmonad
+                    , xmonad-contrib
+                    , containers
+                    , X11
+                    , mtl
+                    , rosezipper
+  ghc-options:
+    -O2
+  default-language:   Haskell2010
+
+executable xmonad-desktop
+  hs-source-dirs:   desktop
+  main-is:          Main.hs
+  build-depends:    base
+                  , xmonad-tom
+                  , xmonad
+                  , xmonad-contrib
+                  , mtl
+                  , containers
+                  , rosezipper
+  default-language: Haskell2010
+
+executable xmonad-laptop
+  hs-source-dirs:   laptop
+  main-is:          Main.hs
+  build-depends:    base
+                  , xmonad-tom
+                  , xmonad
+                  , xmonad-contrib
+                  , containers
+                  , mtl
+                  , rosezipper
+  default-language: Haskell2010

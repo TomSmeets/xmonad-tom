@@ -4,32 +4,32 @@ import XMonad
 import qualified XMonad.StackSet as W
 import qualified XMonad.Util.ExtensibleState as XS
 
-newtype WSHistory = WSHistory { getHistory :: ([Int], Int, [Int]) } deriving (Read,Show,Typeable)
+newtype WSHistory = WSHistory { getHistory :: ([String], String, [String]) } deriving (Read,Show,Typeable)
 
 instance ExtensionClass WSHistory where
-    initialValue  = WSHistory ([], 0, [])
+    initialValue  = WSHistory ([], "", [])
     extensionType = PersistentExtension
 
-goToWS, moveToWS :: Int -> X ()
-goToWS   i = (windows $ W.greedyView (show i))                    >> addUndo i
-moveToWS i = (windows $ W.shift (show i))
+goToWS, moveToWS :: String -> X ()
+goToWS   i = (windows $ W.greedyView (i))                    >> addUndo i
+moveToWS i = (windows $ W.shift (i))
 
-addUndo :: Int -> X ()
+addUndo :: String -> X ()
 addUndo i = XS.get >>= addUndo' i . getHistory
 
 doUndo, doRedo :: X ()
-doUndo = undo >>= mapM_ (windows . W.greedyView . show)
-doRedo = redo >>= mapM_ (windows . W.greedyView . show)
+doUndo = undo >>= mapM_ (windows . W.greedyView)
+doRedo = redo >>= mapM_ (windows . W.greedyView)
 
-undo, redo :: X (Maybe Int)
+undo, redo :: X (Maybe String)
 undo = XS.get >>= undo' . getHistory
 redo = XS.get >>= redo' . getHistory
 
-addUndo' :: Int -> ([Int], Int, [Int]) -> X ()
+addUndo' :: String -> ([String], String, [String]) -> X ()
 addUndo' i (us, c, rs) | c == i    = return ()
                        | otherwise = XS.put (WSHistory (c:us, i, [])) -- maybe do not remove redos
 
-undo', redo' :: ([Int], Int, [Int]) -> X (Maybe Int)
+undo', redo' :: ([String], String, [String]) -> X (Maybe String)
 undo' (u:us, c, rs) = XS.put (WSHistory (us, u, c:rs)) >> return (Just u)
 undo' ([],   c, rs) = XS.put (WSHistory ([], c, rs))   >> return Nothing
 

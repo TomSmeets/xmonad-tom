@@ -8,11 +8,12 @@ import Data.Function                    (fix)
 import Data.Maybe                       (fromMaybe)
 import Data.List                        (find)
 import Data.Tree.Zipper                 (fromTree, toTree, label, next, prev, parent)
+import Data.Tree
 import XMonad                    hiding (gets, get)
 import XMonad.Actions.GridSelect        (shadowWithKeymap)
 import XMonad.Layout.Decoration         (shrinkIt,  shrinkText, shrinkWhile) 
 import XMonad.Prompt                    (mkUnmanagedWindow)
-import XMonad.Tom.Workspace             (Workspace(..),  ZTree,  doAll,  myTree,  searchBelow,  setFold,  toIndents,  unfoldParents, child)
+import XMonad.Tom.Workspace             (Workspace(..),  ZTree,  doAll, searchBelow,  setFold,  toIndents,  unfoldParents, child)
 import XMonad.Tom.Workspace.History
 import XMonad.Util.Font                 (initXMF,  printStringXMF,  releaseXMF,  textWidthXMF, XMonadFont)
 
@@ -27,11 +28,11 @@ data WSelect = WSelect { wsTree   :: ZTree Workspace
 
 type WS = StateT WSelect X
 
-runWS :: Bool -> X ()
-runWS shift = do
-    let initTree = fromTree myTree
+runWS :: Tree Workspace -> Bool -> X ()
+runWS t shift = do
+    let initTree = fromTree t
     me <- withWindowSet (return . W.tag . W.workspace . W.current)
-    let findMe = searchBelow (\w -> index w == read me) 
+    let findMe = searchBelow (\w -> path w == me) 
 
     idx <- mkWindow "xft:Sans-16" (fromMaybe initTree (unfoldParents <$> findMe initTree))
     case idx of 
@@ -41,11 +42,11 @@ runWS shift = do
         _      -> return ()
 
 goToSelected :: WS ()
-goToSelected = gets (index . label . wsTree) >>= lift . goToWS
+goToSelected = gets (path . label . wsTree) >>= lift . goToWS
 
-findWS i = withWindowSet (\winset -> return . find (\ws -> show i == W.tag ws) . W.workspaces $ winset)
+findWS p = withWindowSet (\winset -> return . find (\ws -> p == W.tag ws) . W.workspaces $ winset)
 
-mkWindow :: String -> ZTree Workspace -> X (Maybe Int)
+mkWindow :: String -> ZTree Workspace -> X (Maybe String)
 mkWindow fnt t = withDisplay $ \dpy -> do
     rootw <- asks theRoot
     s     <- gets $ screenRect . W.screenDetail . W.current . windowset
@@ -73,11 +74,11 @@ mkWindow fnt t = withDisplay $ \dpy -> do
     releaseXMF font
     return txt
 
-myNavigation :: WS (Maybe Int)
+myNavigation :: WS (Maybe String)
 myNavigation = makeXEventhandler $ shadowWithKeymap navKeyMap navDefaultHandler
   where 
     navKeyMap = M.fromList [ ((0, xK_Escape), return Nothing)
-                           , ((0, xK_Return), gets (Just . index . label . wsTree))
+                           , ((0, xK_Return), gets (Just . path . label . wsTree))
                            , ((0, xK_j),      moveTree next False  >> myNavigation)
                            , ((0, xK_k),      moveTree prev False  >> myNavigation)
                            , ((0, xK_l),      moveTree (\w -> (unfoldParents . doAll (setFold True)) <$> child w) True >> myNavigation)
@@ -113,7 +114,7 @@ redraw full = do
     moveTree' (Just . unfoldParents . doAll (setFold True))
     indents <- gets (toIndents . toTree . wsTree)
     current <- gets (label . wsTree)
-    sequence_ $ zipWith (\(w, x) y -> drawNode x y w (index w == index current) win fnt) indents [0..]
+    sequence_ $ zipWith (\(w, x) y -> drawNode x y w (path w == path current) win fnt) indents [0..]
     return ()
 
 
@@ -131,7 +132,7 @@ drawNode ix iy ws hl win fnt = do
     
     (scW, scH) <- gets wsScreen
     
-    wws <- lift . findWS . index $ ws
+    wws <- lift . findWS . path $ ws
     let windowInWS = (W.focus <$> (wws >>= W.stack))
     mes <- lift $ fromMaybe (return "") $ (fmap show . getName) <$> windowInWS
     -- mes <- lift $ (maybe "" (getName . W.focus) . W.stack) <$> (findWS $ index ws)

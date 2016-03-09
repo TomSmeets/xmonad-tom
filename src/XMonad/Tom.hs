@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts #-}
 module XMonad.Tom where
 
 import Control.Concurrent               (threadDelay)
@@ -17,6 +18,8 @@ import XMonad.Hooks.EwmhDesktops        (ewmh)
 import XMonad.Hooks.ManageDocks         (manageDocks, avoidStruts)
 import XMonad.Hooks.ManageHelpers
 import XMonad.Layout.Fullscreen         (fullscreenSupport)
+import XMonad.Layout.LayoutModifier
+import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.SetWMName
 import XMonad.Layout.NoBorders          (smartBorders)
 import XMonad.Layout.PerWorkspace
@@ -32,25 +35,23 @@ import qualified XMonad.Tom.Workspace.Select  as WS
 import qualified XMonad.Tom.XMobar            as B
 import qualified XMonad.Tom.XMobarHs          as BU
 
-main :: IO ()
-main = xmonad . ewmh =<< statusBar "xmobar" myPP toggleStrutsKey myConfig
+-- | This PP only shows the current title of the focused Window.
+titlePP = defaultPP { ppCurrent         = const ""
+                    , ppVisible         = const ""
+                    , ppHidden          = const ""
+                    , ppHiddenNoWindows = const ""
+                    , ppUrgent          = const ""
+                    , ppSep             = ":"
+                    , ppWsSep           = ""
+                    , ppTitle           = id
+                    , ppLayout          = const ""
+                    , ppOrder           = id
+                    , ppExtras          = []
+                    }
 
-myPP = defaultPP { ppCurrent         = const ""
-                 , ppVisible         = const ""
-                 , ppHidden          = const ""
-                 , ppHiddenNoWindows = const ""
-                 , ppUrgent          = const ""
-                 , ppSep             = ":"
-                 , ppWsSep           = ""
-                 , ppTitle           = id -- shorten 80
-                 , ppLayout          = const ""
-                 , ppOrder           = id
-                 , ppExtras          = []
-                 }
-
--- | Helper function which provides ToggleStruts keybinding
-toggleStrutsKey :: XConfig t -> (KeyMask, KeySym)
-toggleStrutsKey XConfig{modMask = modm} = (modm, xK_b )
+myLayout = avoidStruts  -- Don't cover the statusbar
+         . smartBorders -- Don't show borders when in fullscreen
+         $ modes
 
 -- | The available layouts.  Note that each layout is separated by |||, which
 -- denotes layout choice.
@@ -58,93 +59,87 @@ modes = tiled ||| Mirror tiled ||| Full
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
-
      -- The default number of windows in the master pane
      nmaster = 1
-
      -- Default proportion of screen occupied by master pane
      ratio   = 1/2
-
      -- Percent of screen to increment by when resizing panes
      delta   = 5/100
 
-myLayout = avoidStruts  -- Don't cover the statusbar
-         . smartBorders -- Don't show borders when in fullscreen
-         $ modes
-
-myConfig = fullscreenSupport $ defaultConfig 
+myConfig = fullscreenSupport $ myKeys $ defaultConfig 
     { terminal          = "urxvt"
     , manageHook        = manageSpawn <+> manageDocks
-    , workspaces        = map (show . W.index) $ flatten W.myTree --map label myWorkspaces
-    , startupHook       = onFirst doWSSpawns >> startup
+-- , workspaces        = map W.path $ flatten W.myTree --map label myWorkspaces
     , layoutHook        = myLayout
     , logHook           = dynamicLogWithPP $ defaultPP
     , focusFollowsMouse = False
     , borderWidth       = 2
     }
-    `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to lauch .desktop files
-                        ("M-p",   spawn "j4-dmenu-desktop")
-                      , ("M-S-p", spawn "dmenu_run")
 
-                      -- media controls
-                      , ("M-f",   spawn "amixer set Capture toggle")
-                      , ("M-S-f", spawn "amixer set Master toggle")
+-- TODO: set names as path like root.programming.1
+withWSTree t conf = conf { workspaces = map W.path $ flatten t } `additionalKeysP` [ ("M-r",   WS.runWS t False) -- Go to workspace with treeselect
+                                                                                   , ("M-S-r", WS.runWS t True)  -- Move and go to workspace with treeselect
+                                                                                   , ("M-o",   WSH.doUndo)  -- Go back to the last Workspace
+                                                                                   , ("M-i",   WSH.doRedo)  -- Go foreward in your undo history
+                                                                                   ]
 
-                      -- movement
-                      , ("M-r",   WS.runWS False) -- Go to workspace with treeselect
-                      , ("M-S-r", WS.runWS True)  -- Move and go to workspace with treeselect
-                      , ("M-o",   WSH.doUndo)
-                      , ("M-i",   WSH.doRedo)
+myKeys conf = conf `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to lauch .desktop files
+           ("M-p",   spawn "j4-dmenu-desktop")
+         , ("M-S-p", spawn "dmenu_run")
 
-                      -- util actions
-                      , ("M-u", void . runDialogX $ listToTree (Choice "" $ return ())
-                            [ Choice "Wallpaper" $ doBG
-                            ])
+         -- media controls
+         , ("M-f",   spawn "amixer set Capture toggle")
+         , ("M-S-f", spawn "amixer set Master toggle")
 
-                      -- xmonad actions
-                      , ("M-q", void . runDialogX $ listToTree (Choice "" $ return ())
-                            [ Choice "compile" $ spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Done/xmonad-tom -x ./XMBuild"
-                            , Choice "restart" $ spawn "xmonad --restart"
-                            , Choice "xmobar"  $ io (BU.export B.config >> spawn "pkill xmobar; xmonad --restart")
-                            ])
+         -- movement
 
-                      -- system actions
-                      , ("M-S-q", void . runDialogX $ listToTree (Choice "" $ return ())
-                            [ Choice "logout"   $ closeAll >> io exitSuccess
-                            , Choice "restart"  $ closeAll >> spawn "sudo shutdown now -r"
-                            , Choice "shutdown" $ closeAll >> spawn "sudo shutdown now"
-                            ])
-                      , ("M-S-e", windows (\set -> set { current = swap (current set) (head $ visible set)
-                                                       , visible = swap (head (visible set)) (current set) : tail (visible set)}))
-                      ]
+         -- Display a list of actions
+
+         -- xmonad actions
+         , ("M-q", void . runDialogX $ listToTree (Choice "" $ return ())
+               [ Choice "recompile" $ spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Done/xmonad-tom -x ./XMBuild"
+               , Choice "restart" $ spawn "xmonad --restart"
+               , Choice "xmobar"  $ io (BU.export B.config >> spawn "pkill xmobar; xmonad --restart")
+               ])
+
+         -- system actions
+         , ("M-S-q", void . runDialogX $ listToTree (Choice "" $ return ())
+               [ Choice "shutdown" $ closeAll >> spawn "sudo shutdown now"
+               , Choice "restart"  $ closeAll >> spawn "sudo shutdown now -r"
+               , Choice "logout"   $ closeAll >> io exitSuccess
+               ])
+         -- swap workspaces with screens
+         ]
     `additionalKeys`  [ ((0, xF86XK_AudioLowerVolume), spawn "amixer set Master 2.5%-")
                       , ((0, xF86XK_AudioRaiseVolume), spawn "amixer set Master 2.5%+")
                       , ((0, xF86XK_AudioMute),        spawn "amixer set Master toggle")
                       ]
 
-swap (Screen ws i d) (Screen ws' i' d') = Screen ws' i d
-myManage = isFullscreen --> doFullFloat
-
 listToTree :: a -> [a] -> Tree a
 listToTree r = Node r . map (`Node` [])
 
-doWSSpawns :: X ()
-doWSSpawns = do
-    spawnOn (findIdx "Browser")     "iceweasel"
+-- | enable XMobar, to generate a config use mkXMobarConf xmconf
+-- M-b: toggle xmobar
+withXMobar :: LayoutClass l Window => PP -> XConfig l -> IO (XConfig (ModifiedLayout AvoidStruts l))
+withXMobar pp conf = statusBar "xmobar" pp (const (modMask conf, xK_b)) conf
+
+mkXMobarConf xmconf = BU.export xmconf
+
+-- | Apply dualScreen support
+-- M-S-e to swap screens
+dualScreen conf = conf `additionalKeysP` 
+    [ -- swap the workspaces on screens 
+      ("M-S-e", windows (\set -> set { current = swap (current set) (head $ visible set)
+                                     , visible = swap (head (visible set)) (current set) : tail (visible set)}))
+    ]
   where
-    findIdx name = show . W.index . label . fromJust . W.searchBelow ((==name) . W.name) . fromTree $ W.myTree
+      swap (Screen ws i d) (Screen ws' i' d') = Screen ws' i d
 
--- | Startup hook
-startup :: X ()
-startup = do
-    setWMName "LG3D" -- to make java swing work
-    doBG
+fixJava conf = conf { startupHook = setWMName "LG3D" >> startupHook conf }
 
--- | Generate next wallpaper
-doBG :: X ()
-doBG = spawn "FractalArt -w 1920 -h 1200 -f $HOME/.fractalart/wallpaperL.bmp\
-           \& FractalArt -w 1920 -h 1080 -f $HOME/.fractalart/wallpaperR.bmp & wait \
-           \&& feh --bg-fill $HOME/.fractalart/wallpaperL.bmp --bg-fill $HOME/.fractalart/wallpaperR.bmp"
+runInWS cmd ws = onStartup $ spawnOn ws cmd
+
+onStartup m conf = conf { startupHook = startupHook conf >> m }
 
 -------------------------------------------
 
