@@ -73,7 +73,7 @@ myLayout = avoidStruts  -- Don't cover the statusbar
          $ modes
 
 myConfig = fullscreenSupport $ defaultConfig 
-    { terminal          = "gnome-terminal"
+    { terminal          = "urxvt"
     , manageHook        = manageSpawn <+> manageDocks
     , workspaces        = map (show . W.index) $ flatten W.myTree --map label myWorkspaces
     , startupHook       = onFirst doWSSpawns >> startup
