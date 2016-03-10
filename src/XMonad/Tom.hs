@@ -125,8 +125,7 @@ listToTree :: a -> [a] -> Tree a
 listToTree r = Node r . map (`Node` [])
 
 doWSSpawns :: X ()
-doWSSpawns = do
-    spawnOn (findIdx "Browser")     "iceweasel"
+doWSSpawns = return ()
   where
     findIdx name = show . W.index . label . fromJust . W.searchBelow ((==name) . W.name) . fromTree $ W.myTree
 

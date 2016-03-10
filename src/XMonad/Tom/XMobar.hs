@@ -24,7 +24,11 @@ config = defaultConfig
    -- layout
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
+<<<<<<< HEAD
    , template = "%multicpu% | %memory% | %dynnetwork% } %StdinReader% { %dropbox% | %battery% | %date% | %time%"
+=======
+   , template = "%dynnetwork% | %memory% | %multicpu% } %StdinReader% { %dropbox% | %battery% | %date%"
+>>>>>>> ce43f60b6cd2369cad0474f6d29865b4ba36db0b
 
    -- general behavior
    , lowerOnStart =     True    -- send to bottom of window stack on start
@@ -83,8 +87,12 @@ config = defaultConfig
 
         -- time and date indicator 
         --   (%F = y-m-d date, %a = day of week, %T = h:m:s time)
+<<<<<<< HEAD
         , Run $ Date "%d-%m-%Y (<fc=lightblue>%a</fc>)" "date" 10
         , Run $ Date "<fc=cyan>%T</fc>"                "time" 10
+=======
+        , Run $ Date "%F %T" "date" 10
+>>>>>>> ce43f60b6cd2369cad0474f6d29865b4ba36db0b
         , Run $ Com "dropbox" ["status"] "dropbox" 10
         , Run $ Com "cat" ["/sys/class/power_supply/BAT1/capacity"] "battery" 10
         ]
