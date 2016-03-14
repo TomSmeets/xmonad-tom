@@ -6,6 +6,7 @@ import Data.Tree
 import Data.Tree.Zipper
 import XMonad
 import XMonad.Tom
+import XMonad.Tom.XMobarHs
 import XMonad.Tom.UI.Dialog
 import XMonad.Tom.Workspace
 import XMonad.Util.EZConfig
@@ -16,7 +17,12 @@ main = xmonad =<< withXMobar titlePP conf
 conf = onStartup doBG
      . fixJava
      . withWSTree myTree
-     . flip additionalKeysP [ ("M-u", void . runDialogX $ listToTree (Choice "" $ return ()) [ Choice "Wallpaper" doBG ]) ]
+     . flip additionalKeysP [ ("M-u", void . runDialogX $ listToTree (Choice "" $ return ())
+           [ Choice "Bright" (spawn "xbacklight -set 99 -time 1; xbacklight -set 100")
+           , Choice "Dim"    (spawn "xbacklight -set 24 -time 1; xbacklight -set 25")
+           , Choice "Wallpaper" doBG
+           -- , Choice "XMobar" (export myTree)
+           ]) ]
      $ myConfig
 
 doBG :: X ()
