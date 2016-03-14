@@ -137,7 +137,12 @@ dualScreen conf = conf `additionalKeysP`
 
 fixJava conf = conf { startupHook = setWMName "LG3D" >> startupHook conf }
 
-runInWS cmd ws = onStartup $ spawnOn ws cmd
+runInWS cmd ws conf = onStartup (spawnOn ws cmd) $
+    conf { manageHook = manageHook conf <+> composeAll [ className =? cmd --> doShift ws
+                                                       , title     =? cmd --> doShift ws
+                                                       , appName   =? cmd --> doShift ws
+                                                       ]
+         }
 
 onStartup m conf = conf { startupHook = startupHook conf >> m }
 
