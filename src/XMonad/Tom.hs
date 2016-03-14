@@ -32,7 +32,6 @@ import XMonad.Tom.UI.Dialog
 import qualified XMonad.Tom.Workspace         as W
 import qualified XMonad.Tom.Workspace.History as WSH
 import qualified XMonad.Tom.Workspace.Select  as WS
-import qualified XMonad.Tom.XMobar            as B
 import qualified XMonad.Tom.XMobarHs          as BU
 
 -- | This PP only shows the current title of the focused Window.
@@ -97,9 +96,7 @@ myKeys conf = conf `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to l
 
          -- xmonad actions
          , ("M-q", void . runDialogX $ listToTree (Choice "" $ return ())
-               [ Choice "recompile" $ spawn "gnome-terminal --working-directory $HOME/Programming/Haskell/Done/xmonad-tom -x ./XMBuild"
-               , Choice "restart" $ spawn "xmonad --restart"
-               , Choice "xmobar"  $ io (BU.export B.config >> spawn "pkill xmobar; xmonad --restart")
+               [ Choice "restart"   $ spawn "xmonad --restart"
                ])
 
          -- system actions

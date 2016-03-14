@@ -1,4 +1,4 @@
-module Main where
+module Desktop where
 
 import Control.Monad
 import Data.List
@@ -12,7 +12,9 @@ import XMonad.Tom.XMobarHs as XMobar
 import XMonad.Util.EZConfig
 
 main :: IO ()
-main = xmonad =<< withXMobar titlePP conf
+main = do
+    export xmobarconf
+    xmonad =<< withXMobar titlePP conf
 
 conf = runInWS "iceweasel" "root.Left.Browser"
      . onStartup doBG

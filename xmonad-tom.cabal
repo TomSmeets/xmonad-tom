@@ -37,7 +37,7 @@ library
 
 executable xmonad-desktop
   hs-source-dirs:   desktop
-  main-is:          Main.hs
+  main-is:          Desktop.hs
   build-depends:    base
                   , xmonad-tom
                   , xmonad
@@ -48,13 +48,13 @@ executable xmonad-desktop
   default-language: Haskell2010
 
 executable xmonad-laptop
-  hs-source-dirs:   laptop
-  main-is:          Main.hs
-  build-depends:    base
-                  , xmonad-tom
-                  , xmonad
-                  , xmonad-contrib
-                  , containers
-                  , mtl
-                  , rosezipper
+  hs-source-dirs:    laptop, desktop
+  main-is:           Laptop.hs
+  build-depends:     base
+                   , xmonad-tom
+                   , xmonad
+                   , xmonad-contrib
+                   , containers
+                   , mtl
+                   , rosezipper
   default-language: Haskell2010
