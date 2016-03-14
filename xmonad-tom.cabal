@@ -20,7 +20,6 @@ library
     XMonad.Tom.Workspace
     XMonad.Tom.Workspace.History
     XMonad.Tom.Workspace.Select
-    XMonad.Tom.XMobar
     XMonad.Tom.XMobarHs
   build-depends:      base >= 4.7 && < 5
                     , xmonad
