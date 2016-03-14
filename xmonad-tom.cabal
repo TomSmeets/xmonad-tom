@@ -28,6 +28,8 @@ library
                     , containers
                     , X11
                     , mtl
+                    , directory
+                    , filepath
                     , rosezipper
   ghc-options:
     -O2

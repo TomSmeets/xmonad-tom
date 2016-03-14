@@ -10,6 +10,8 @@ module XMonad.Tom.XMobarHs
 ) where
 
 import Data.List
+import System.Directory
+import System.FilePath
 
 -- | The configuration data type
 data Config =
@@ -174,4 +176,6 @@ instance Show a => Show (Run a) where
 -- remember to put a "$" after every "Run"
 -- otherwise, configure it the same as you would a normal .xmobarrc
 export :: Config -> IO ()
-export = writeFile "/home/tom/.xmobarrc" . show
+export conf = do
+    home <- getHomeDirectory
+    writeFile (home </> ".xmobarrc") (show conf)
