@@ -1,4 +1,4 @@
-module Laptop where
+module Main where
 
 import Control.Monad
 import Data.List
@@ -8,9 +8,8 @@ import XMonad
 import XMonad.Tom
 import XMonad.Tom.UI.Dialog
 import XMonad.Tom.Workspace
-import XMonad.Tom.XMobarHs
+import XMonad.Tom.XMobarHs as XMobar
 import XMonad.Util.EZConfig
-import qualified Desktop
 
 main :: IO ()
 main = do export xmobarconf 
@@ -38,8 +37,30 @@ myTree = idx $ nd "root" [ nd "School" (numbers 0)
     numbers n = map (\c -> nd [c] []) . drop n $ ['a'..'f']
     idx = fmap (\(w, p) -> w{ path = intercalate "." p }) . treePath name
 
-xmobarconf = Desktop.xmobarconf
-    { template = "%multicpu% | %memory% | %dynnetwork% } %StdinReader% { %dropbox% | %battery% | %date% | %time%"
+xmobarconf = XMobar.defaultConfig
+    { font            = "xft:monospace:size=10:bold"
+    , additionalFonts = ["xft:DejaVu Sans Mono:size=10","xft:Symbola:size=10","xft:Code2000:size=10"]
+
+    , bgColor     = "#408080"
+    , fgColor     = "#FFFFFF"
+    , borderColor = "#000000"
+
+    , position = Top
+    , border   = NoBorder
+
+    -- layout
+    , sepChar  = "%"
+    , alignSep = "}{"
+    , template = "%multicpu% | %memory% | %dynnetwork% } %StdinReader% { %dropbox% | %battery% | %date% | %time%"
+
+    -- general behavior
+    , allDesktops      = True    -- show on all desktops
+    , hideOnStart      = False   -- start with window unmapped (hidden)
+    , lowerOnStart     = True    -- send to bottom of window stack on start
+    , overrideRedirect = True    -- set the Override Redirect flag (Xlib)
+    , persistent       = True    -- enable/disable hiding (True = disabled)
+    , pickBroadest     = False   -- choose widest display (multi-monitor)
+
     , commands = [ Run $ XPropertyLog "_XMONAD_LOG"
                  , Run $ StdinReader
 
