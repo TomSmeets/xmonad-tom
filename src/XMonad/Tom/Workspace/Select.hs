@@ -154,8 +154,8 @@ highlighted False = id
 colorsActive, colorsInactive :: [String]
 colorsActive   = colorsInactive -- ["#9FCE10", "#BEF249"]
 colorsInactive = ["#10B8D6", "#50D0DB"]
-colorBG        = 0xFFFFFF
-colorBGStr     = "#FFFFFF"
+colorBG        = 0xD0D0D0
+colorBGStr     = "#D0D0D0"
 
 -- | create an event handler, blocks until one event has been handled, you have to do the looping yourself
 makeXEventhandler :: ((KeySym, String, KeyMask) -> WS (Maybe a)) -> WS (Maybe a)
