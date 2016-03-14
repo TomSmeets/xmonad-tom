@@ -10,17 +10,17 @@ import Data.Tree.Zipper
 import Graphics.X11.ExtraTypes.XF86
 import System.Exit                      (exitSuccess)
 import XMonad
+import XMonad.Actions.CycleWS
 import XMonad.Actions.GridSelect
 import XMonad.Actions.SpawnOn           (spawnOn, manageSpawn)
-import XMonad.Actions.CycleWS
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops        (ewmh)
+import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageDocks         (manageDocks, avoidStruts)
 import XMonad.Hooks.ManageHelpers
+import XMonad.Hooks.SetWMName
 import XMonad.Layout.Fullscreen         (fullscreenSupport)
 import XMonad.Layout.LayoutModifier
-import XMonad.Hooks.ManageDocks
-import XMonad.Hooks.SetWMName
 import XMonad.Layout.NoBorders          (smartBorders)
 import XMonad.Layout.PerWorkspace
 import XMonad.Layout.SimplestFloat
