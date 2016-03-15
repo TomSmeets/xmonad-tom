@@ -35,18 +35,21 @@ import qualified XMonad.Tom.Workspace.Select  as WS
 import qualified XMonad.Tom.XMobarHs          as BU
 
 -- | This PP only shows the current title of the focused Window.
-titlePP = defaultPP { ppCurrent         = const ""
+titlePP = defaultPP { ppCurrent         = hlLast
                     , ppVisible         = const ""
                     , ppHidden          = const ""
                     , ppHiddenNoWindows = const ""
                     , ppUrgent          = const ""
-                    , ppSep             = ":"
+                    , ppSep             = xmobarColor "white" "" " | "
                     , ppWsSep           = ""
                     , ppTitle           = id
-                    , ppLayout          = const ""
-                    , ppOrder           = id
+                    , ppLayout          = id -- const ""
+                    , ppOrder           = \[w, l, t] -> [l, w, t]
                     , ppExtras          = []
                     }
+  where
+      hlLast path = let (h, t) = span (/= '.') $ reverse path
+                     in xmobarColor "white" "" (reverse t) ++ xmobarColor "green" "" (reverse h)
 
 myLayout = avoidStruts  -- Don't cover the statusbar
          . smartBorders -- Don't show borders when in fullscreen
@@ -75,7 +78,6 @@ myConfig = fullscreenSupport $ myKeys $ defaultConfig
     , borderWidth       = 2
     }
 
--- TODO: set names as path like root.programming.1
 withWSTree t conf = conf { workspaces = map W.path $ flatten t } `additionalKeysP` [ ("M-r",   WS.runWS t False) -- Go to workspace with treeselect
                                                                                    , ("M-S-r", WS.runWS t True)  -- Move and go to workspace with treeselect
                                                                                    , ("M-o",   WSH.doUndo)  -- Go back to the last Workspace
@@ -141,7 +143,7 @@ runInWS cmd ws conf = onStartup (spawnOn ws cmd) $
                                                        ]
          }
 
-onStartup m conf = conf { startupHook = startupHook conf >> m }
+onStartup m conf = conf { startupHook = onFirst $ startupHook conf >> m }
 
 -------------------------------------------
 
@@ -175,4 +177,3 @@ seconds n = floor $ n * 10**6
 -- | Get the number of open windows
 windowCount :: X Int
 windowCount = withWindowSet (return . length . allWindows)
-

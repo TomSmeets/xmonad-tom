@@ -12,8 +12,9 @@ import XMonad.Tom.XMobarHs as XMobar
 import XMonad.Util.EZConfig
 
 main :: IO ()
-main = do export xmobarconf 
-          xmonad =<< withXMobar titlePP conf
+main = do
+    export xmobarconf
+    xmonad =<< withXMobar titlePP conf
 
 conf = onStartup doBG
      . fixJava
@@ -37,6 +38,7 @@ myTree = idx $ nd "root" [ nd "School" (numbers 0)
     numbers n = map (\c -> nd [c] []) . drop n $ ['a'..'f']
     idx = fmap (\(w, p) -> w{ path = intercalate "." p }) . treePath name
 
+xmobarconf :: Config
 xmobarconf = XMobar.defaultConfig
     { font            = "xft:monospace:size=10:bold"
     , additionalFonts = ["xft:DejaVu Sans Mono:size=10","xft:Symbola:size=10","xft:Code2000:size=10"]
@@ -51,7 +53,7 @@ xmobarconf = XMobar.defaultConfig
     -- layout
     , sepChar  = "%"
     , alignSep = "}{"
-    , template = "%multicpu% | %memory% | %dynnetwork% } %StdinReader% { %dropbox% | %battery% | %date% | %time%"
+    , template = "%multicpu% | %memory% | %dynnetwork% | %StdinReader% }{ %dropbox% | %battery% | %date% | %time%"
 
     -- general behavior
     , allDesktops      = True    -- show on all desktops
