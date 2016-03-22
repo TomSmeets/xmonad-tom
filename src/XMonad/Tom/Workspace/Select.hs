@@ -79,11 +79,19 @@ myNavigation = makeXEventhandler $ shadowWithKeymap navKeyMap navDefaultHandler
   where 
     navKeyMap = M.fromList [ ((0, xK_Escape), return Nothing)
                            , ((0, xK_Return), gets (Just . path . label . wsTree))
-                           , ((0, xK_j),      moveTree next False  >> myNavigation)
-                           , ((0, xK_k),      moveTree prev False  >> myNavigation)
-                           , ((0, xK_l),      moveTree (\w -> (unfoldParents . doAll (setFold True)) <$> child w) True >> myNavigation)
-                           , ((0, xK_h),      moveTree parent True >> myNavigation)
+                           , ((0, xK_Up),    up)
+                           , ((0, xK_Down),  down)
+                           , ((0, xK_Left),  left)
+                           , ((0, xK_Right), right)
+                           , ((0, xK_k), up)
+                           , ((0, xK_j), down)
+                           , ((0, xK_h), left)
+                           , ((0, xK_l), right)
                            ]
+    down  = moveTree next False  >> myNavigation
+    up    = moveTree prev False  >> myNavigation
+    right = moveTree (\w -> (unfoldParents . doAll (setFold True)) <$> child w) True >> myNavigation
+    left  = moveTree parent True >> myNavigation
     navDefaultHandler = const myNavigation
 
 -- | Evaluate the 'WS' monad
