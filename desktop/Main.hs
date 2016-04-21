@@ -15,7 +15,7 @@ main = do
     export xmobarconf
     xmonad =<< withXMobar titlePP conf
 
-conf = runInWS "iceweasel" "root.Left.Browser"
+conf = runInWS "firefox" "root.Left.Browser"
      . onStartup doBG
      . dualScreen
      . fixJava

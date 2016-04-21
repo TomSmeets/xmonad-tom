@@ -44,6 +44,8 @@ executable xmonad-desktop
                   , mtl
                   , containers
                   , rosezipper
+  ghc-options:
+    -O2
   default-language: Haskell2010
 
 executable xmonad-laptop
@@ -56,4 +58,6 @@ executable xmonad-laptop
                    , containers
                    , mtl
                    , rosezipper
+  ghc-options:
+    -O2
   default-language: Haskell2010

@@ -25,6 +25,7 @@ import XMonad.Layout.NoBorders          (smartBorders)
 import XMonad.Layout.PerWorkspace
 import XMonad.Layout.SimplestFloat
 import XMonad.StackSet                  hiding (workspaces)
+import XMonad.Core (withWindowSet)
 import XMonad.Util.EZConfig             (additionalKeysP, additionalKeys)
 import XMonad.Util.Run                  (runProcessWithInput)
 
@@ -76,6 +77,7 @@ myConfig = fullscreenSupport $ myKeys $ defaultConfig
     , logHook           = dynamicLogWithPP $ defaultPP
     , focusFollowsMouse = False
     , borderWidth       = 2
+    , modMask           = mod3Mask
     }
 
 withWSTree t conf = conf { workspaces = map W.path $ flatten t } `additionalKeysP` [ ("M-r",   WS.runWS t False) -- Go to workspace with treeselect
@@ -84,9 +86,12 @@ withWSTree t conf = conf { workspaces = map W.path $ flatten t } `additionalKeys
                                                                                    , ("M-i",   WSH.doRedo)  -- Go foreward in your undo history
                                                                                    ]
 
+screenID :: X ScreenId
+screenID = withWindowSet (return . screen . current)
+
 myKeys conf = conf `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to lauch .desktop files
-           ("M-p",   spawn "j4-dmenu-desktop")
-         , ("M-S-p", spawn "dmenu_run")
+           ("M-p",   screenID >>= \(S i) -> spawn $ "j4-dmenu-desktop --dmenu='dmenu -i -p .desktop -m " ++ show i ++ "'")
+         , ("M-S-p", screenID >>= \(S i) -> spawn $ "dmenu_run -i -p cmd -m " ++ show i)
 
          -- media controls
          , ("M-f",   spawn "amixer set Capture toggle")
@@ -103,8 +108,8 @@ myKeys conf = conf `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to l
 
          -- system actions
          , ("M-S-q", void . runDialogX $ listToTree (Choice "" $ return ())
-               [ Choice "shutdown" $ closeAll >> spawn "sudo shutdown now"
-               , Choice "restart"  $ closeAll >> spawn "sudo shutdown now -r"
+               [ Choice "shutdown" $ closeAll >> spawn "sudo poweroff"
+               , Choice "restart"  $ closeAll >> spawn "sudo reboot"
                , Choice "logout"   $ closeAll >> io exitSuccess
                ])
          -- swap workspaces with screens
