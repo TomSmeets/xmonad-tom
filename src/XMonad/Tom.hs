@@ -2,6 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module XMonad.Tom where
 
+import System.Process
+import System.IO
+import System.Exit
 import Control.Concurrent               (threadDelay)
 import Control.Monad
 import Data.Maybe
@@ -10,6 +13,7 @@ import Data.Tree.Zipper
 import Graphics.X11.ExtraTypes.XF86
 import System.Exit                      (exitSuccess)
 import XMonad
+import XMonad.Actions.WindowBringer
 import XMonad.Actions.CycleWS
 import XMonad.Actions.GridSelect
 import XMonad.Actions.SpawnOn           (spawnOn, manageSpawn)
@@ -58,7 +62,7 @@ myLayout = avoidStruts  -- Don't cover the statusbar
 
 -- | The available layouts.  Note that each layout is separated by |||, which
 -- denotes layout choice.
-modes = tiled ||| Mirror tiled ||| Full
+modes = Mirror tiled ||| tiled ||| Full
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
@@ -69,7 +73,7 @@ modes = tiled ||| Mirror tiled ||| Full
      -- Percent of screen to increment by when resizing panes
      delta   = 5/100
 
-myConfig = fullscreenSupport $ myKeys $ defaultConfig 
+myConfig = fullscreenSupport $ myKeys $ defaultConfig
     { terminal          = "urxvt"
     , manageHook        = manageSpawn <+> manageDocks
 -- , workspaces        = map W.path $ flatten W.myTree --map label myWorkspaces
@@ -108,9 +112,9 @@ myKeys conf = conf `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to l
 
          -- system actions
          , ("M-S-q", void . runDialogX $ listToTree (Choice "" $ return ())
-               [ Choice "shutdown" $ closeAll >> spawn "sudo poweroff"
-               , Choice "restart"  $ closeAll >> spawn "sudo reboot"
-               , Choice "logout"   $ closeAll >> io exitSuccess
+               [ Choice "shutdown" $ closeAll "Shutdown" (spawn "sudo poweroff")
+               , Choice "restart"  $ closeAll "Reboot" (spawn "sudo reboot")
+               , Choice "logout"   $ closeAll "Logout" (io exitSuccess)
                ])
          -- swap workspaces with screens
          ]
@@ -131,8 +135,8 @@ mkXMobarConf xmconf = BU.export xmconf
 
 -- | Apply dualScreen support
 -- M-S-e to swap screens
-dualScreen conf = conf `additionalKeysP` 
-    [ -- swap the workspaces on screens 
+dualScreen conf = conf `additionalKeysP`
+    [ -- swap the workspaces on screens
       ("M-S-e", windows (\set -> set { current = swap (current set) (head $ visible set)
                                      , visible = swap (head (visible set)) (current set) : tail (visible set)}))
     ]
@@ -157,8 +161,19 @@ onFirst :: X () -> X ()
 onFirst m = windowCount >>= \n -> unless (n > 0) m
 
 -- | Prepare for shutdown, wait for Dropbox and close all windows
-closeAll :: X ()
-closeAll = waitDropbox >> closeWindows >> sleep 1
+closeAll :: String -> IO () -> X ()
+closeAll msg m = do
+    n <- windowCount
+    if n > 0
+      then (xfork $ spawnCode ("zenity --question --text \"" ++ msg ++ " with " ++ show n ++ " windows open?\"") m) >> return ()
+      else waitDropbox >> closeWindows >> sleep 1 >> io m
+
+spawnCode :: String -> IO () -> IO ()
+spawnCode cmd m = runCommand cmd >>= waitForProcess >>= ifOK m
+
+ifOK :: Monad m => m () -> ExitCode -> m ()
+ifOK m ExitSuccess = m
+ifOK _ _           = return ()
 
 -- | Close all open windows in all workspaces
 closeWindows :: X ()
