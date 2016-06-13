@@ -77,7 +77,7 @@ myConfig = fullscreenSupport $ myKeys $ defaultConfig
     , logHook           = dynamicLogWithPP $ defaultPP
     , focusFollowsMouse = False
     , borderWidth       = 2
-    , modMask           = mod3Mask
+    , modMask           = mod1Mask
     }
 
 withWSTree t conf = conf { workspaces = map W.path $ flatten t } `additionalKeysP` [ ("M-r",   WS.runWS t False) -- Go to workspace with treeselect
