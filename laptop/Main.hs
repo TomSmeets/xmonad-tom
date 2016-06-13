@@ -54,7 +54,7 @@ xmobarconf = XMobar.defaultConfig
     -- layout
     , sepChar  = "%"
     , alignSep = "}{"
-    , template = "%multicpu% | %memory% | %dynnetwork% | %StdinReader% }{ %dropbox% | %battery% | %date% | %time%"
+    , template = "%multicpu% | %memory% | %dynnetwork% | %StdinReader% }{ %dropbox% | %battery% | %date% | %secs% | %time%"
 
     -- general behavior
     , allDesktops      = True    -- show on all desktops
@@ -101,6 +101,7 @@ xmobarconf = XMobar.defaultConfig
                  --   (%F = y-m-d date, %a = day of week, %T = h:m:s time)
                  , Run $ Date "%d-%m-%Y (<fc=lightblue>%a</fc>)" "date" 10
                  , Run $ Date "<fc=cyan>%T</fc>"                 "time" 10
+                 , Run $ Com "/bin/bash" ["-c", "( date --date 'june 19' +'%s' &&  date +'%s' && echo '-p') | dc"] "secs" 10
 
                  -- dropbox status display
                  , Run $ Com "dropbox" ["status"] "dropbox" 10
