@@ -16,6 +16,7 @@ main = do
     xmonad =<< withXMobar titlePP conf
 
 conf = runInWS "firefox" "root.Left.Browser"
+     . runInWS "vlc $HOME/Music/soundclound" "root.Right.Music"
      . onStartup doBG
      . dualScreen
      . fixJava
@@ -33,16 +34,15 @@ myTree = idx $ nd "root"
            [ nd "Left"
                [ nd "Browser"     []
                , nd "Programming" $ numbers 0
-               , nd "Home" $
-                   [ nd "Aptitude" []
-                   ] ++ numbers 0
+               , nd "Home" $ numbers 0
                , nd "Game" $ numbers 0
                ]
            , nd "Right"
                [ nd "Docs" $ numbers 0
-               , nd "Youtube" []
-               , nd "Skype" []
+               , nd "Music" []
+               , nd "Video" []
                , nd "Steam" []
+               , nd "Skype" []
                , nd "Telegram" []
                ]
            ]
