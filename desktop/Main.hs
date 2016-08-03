@@ -124,6 +124,6 @@ xmobarconf = XMobar.defaultConfig
          , Run $ Com "dropbox" ["status"] "dropbox" 10
 
          -- show who is online on steam (requires my 'steamutils' command)
-         , Run $ Com "steamutils" ["--short"] "steam" 300
+         , Run $ Com "steamutils" ["--short"] "steam" 600
          ]
     }
