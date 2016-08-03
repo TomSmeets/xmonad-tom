@@ -32,6 +32,7 @@ doBG = spawn "FractalArt -f $HOME/.fractalart/wallpaper.bmp && feh --bg-fill $HO
 myTree :: Tree Workspace
 myTree = idx $ nd "root" [ nd "School" (numbers 0)
                          , nd "Browser" []
+                         , nd "Home"   (numbers 0)
                          ]
   where
     nd x xs = Node (Workspace "" x True) xs
