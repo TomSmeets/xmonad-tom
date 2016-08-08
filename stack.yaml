@@ -2,7 +2,12 @@ flags: {}
 extra-package-dbs: []
 packages:
 - '.'
+- location:
+    git: https://github.com/TomSmeets/xmonad-contrib/
+    commit: 7e777bebfd0960ea85a78edb5b63ba4b3900c612
+flags:
+  xmonad-contrib:
+    use_xft: true
 extra-deps:
 - X11-xft-0.3.1
-- xmonad-contrib-0.12
-resolver: lts-5.8
+resolver: lts-6.10

@@ -1,5 +1,5 @@
 name:                xmonad-tom
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            My xmonad configuration
 description:         Please see README.md
 homepage:            http://github.com/githubuser/xmonad-tom
@@ -16,10 +16,7 @@ library
   hs-source-dirs:     src
   exposed-modules:
     XMonad.Tom
-    XMonad.Tom.UI.Dialog
-    XMonad.Tom.Workspace
     XMonad.Tom.Workspace.History
-    XMonad.Tom.Workspace.Select
     XMonad.Tom.XMobarHs
   build-depends:      base >= 4.7 && < 5
                     , xmonad
@@ -29,10 +26,10 @@ library
                     , mtl
                     , directory
                     , filepath
-                    , rosezipper
                     , process
   ghc-options:
     -O2
+    -Wall
   default-language:   Haskell2010
 
 executable xmonad-desktop
@@ -44,9 +41,9 @@ executable xmonad-desktop
                   , xmonad-contrib
                   , mtl
                   , containers
-                  , rosezipper
   ghc-options:
     -O2
+    -Wall
   default-language: Haskell2010
 
 executable xmonad-laptop
@@ -58,7 +55,7 @@ executable xmonad-laptop
                    , xmonad-contrib
                    , containers
                    , mtl
-                   , rosezipper
   ghc-options:
     -O2
+    -Wall
   default-language: Haskell2010

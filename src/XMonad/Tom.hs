@@ -2,41 +2,25 @@
 {-# LANGUAGE FlexibleContexts #-}
 module XMonad.Tom where
 
-import System.Process
-import System.IO
-import System.Exit
 import Control.Concurrent               (threadDelay)
 import Control.Monad
-import Data.Maybe
-import Data.Tree (Tree(..), flatten)
-import Data.Tree.Zipper
+import Data.Tree
 import Graphics.X11.ExtraTypes.XF86
 import System.Exit                      (exitSuccess)
 import XMonad
-import XMonad.Actions.WindowBringer
-import XMonad.Actions.CycleWS
-import XMonad.Actions.GridSelect
 import XMonad.Actions.SpawnOn           (spawnOn, manageSpawn)
+import XMonad.Actions.TreeSelect
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops        (ewmh)
 import XMonad.Hooks.ManageDocks
-import XMonad.Hooks.ManageDocks         (manageDocks, avoidStruts)
-import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.SetWMName
 import XMonad.Layout.Fullscreen         (fullscreenSupport)
 import XMonad.Layout.LayoutModifier
 import XMonad.Layout.NoBorders          (smartBorders)
-import XMonad.Layout.PerWorkspace
-import XMonad.Layout.SimplestFloat
-import XMonad.StackSet                  hiding (workspaces)
-import XMonad.Core (withWindowSet)
+import XMonad.StackSet                  as W hiding (workspaces)
 import XMonad.Util.EZConfig             (additionalKeysP, additionalKeys)
 import XMonad.Util.Run                  (runProcessWithInput)
 
-import XMonad.Tom.UI.Dialog
-import qualified XMonad.Tom.Workspace         as W
-import qualified XMonad.Tom.Workspace.History as WSH
-import qualified XMonad.Tom.Workspace.Select  as WS
 import qualified XMonad.Tom.XMobarHs          as BU
 
 -- | This PP only shows the current title of the focused Window.
@@ -73,22 +57,23 @@ modes = Mirror tiled ||| tiled ||| Full
      -- Percent of screen to increment by when resizing panes
      delta   = 5/100
 
-myConfig = fullscreenSupport $ myKeys $ defaultConfig
+myConfig = ewmh $ fullscreenSupport $ myKeys $ defaultConfig
     { terminal          = "urxvt"
     , manageHook        = manageSpawn <+> manageDocks
--- , workspaces        = map W.path $ flatten W.myTree --map label myWorkspaces
+    , handleEventHook   = docksEventHook
     , layoutHook        = myLayout
-    , logHook           = dynamicLogWithPP $ defaultPP
+    , logHook           = dynamicLogWithPP defaultPP
     , focusFollowsMouse = False
     , borderWidth       = 2
     , modMask           = mod1Mask
     }
 
-withWSTree t conf = conf { workspaces = map W.path $ flatten t } `additionalKeysP` [ ("M-r",   WS.runWS t False) -- Go to workspace with treeselect
-                                                                                   , ("M-S-r", WS.runWS t True)  -- Move and go to workspace with treeselect
-                                                                                   , ("M-o",   WSH.doUndo)  -- Go back to the last Workspace
-                                                                                   , ("M-i",   WSH.doRedo)  -- Go foreward in your undo history
-                                                                                   ]
+withWSTree t conf = conf { workspaces = toWorkspaces t }
+    `additionalKeysP` [ ("M-r",   treeselectWorkspace def t W.greedyView) -- Go to workspace with treeselect
+                      , ("M-S-r", treeselectWorkspace def t W.shift)  -- Move and go to workspace with treeselect
+                      -- , ("M-o",   WSH.doUndo)  -- Go back to the last Workspace
+                      -- , ("M-i",   WSH.doRedo)  -- Go foreward in your undo history
+                      ]
 
 screenID :: X ScreenId
 screenID = withWindowSet (return . screen . current)
@@ -101,22 +86,14 @@ myKeys conf = conf `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to l
          , ("M-f",   spawn "amixer set Capture toggle")
          , ("M-S-f", spawn "amixer set Master toggle")
 
-         -- movement
-
-         -- Display a list of actions
-
          -- xmonad actions
-         , ("M-q", void . runDialogX $ listToTree (Choice "" $ return ())
-               [ Choice "restart"   $ spawn "xmonad --restart"
-               ])
-
-         -- system actions
-         , ("M-S-q", void . runDialogX $ listToTree (Choice "" $ return ())
-               [ Choice "shutdown" $ closeAll "Shutdown" (spawn "sudo poweroff")
-               , Choice "restart"  $ closeAll "Reboot" (spawn "sudo reboot")
-               , Choice "logout"   $ closeAll "Logout" (io exitSuccess)
-               ])
-         -- swap workspaces with screens
+         , ("M-S-q", do n <- windowCount
+                        let msg = if n == 0 then "(No open windows)"
+                                            else "( " ++ show n ++ " open windows)"
+                        treeselectAction def [ Node (TSNode "Shutdown" ("Poweroff my computer " ++ msg) (closeWindows >> spawn "poweroff")) []
+                                             , Node (TSNode "Restart"  "Restart my computer"            (closeWindows >> spawn "reboot"))   []
+                                             , Node (TSNode "Logout"   "Kill XMonad"                    (closeWindows >> io exitSuccess))   []
+                                             ])
          ]
     `additionalKeys`  [ ((0, xF86XK_AudioLowerVolume), spawn "amixer set Master 2.5%-")
                       , ((0, xF86XK_AudioRaiseVolume), spawn "amixer set Master 2.5%+")
@@ -131,7 +108,7 @@ listToTree r = Node r . map (`Node` [])
 withXMobar :: LayoutClass l Window => PP -> XConfig l -> IO (XConfig (ModifiedLayout AvoidStruts l))
 withXMobar pp conf = statusBar "xmobar" pp (const (modMask conf, xK_b)) conf
 
-mkXMobarConf xmconf = BU.export xmconf
+mkXMobarConf = BU.export
 
 -- | Apply dualScreen support
 -- M-S-e to swap screens
@@ -160,25 +137,14 @@ onStartup m conf = conf { startupHook = onFirst $ startupHook conf >> m }
 onFirst :: X () -> X ()
 onFirst m = windowCount >>= \n -> unless (n > 0) m
 
--- | Prepare for shutdown, wait for Dropbox and close all windows
-closeAll :: String -> IO () -> X ()
-closeAll msg m = do
-    n <- windowCount
-    if n > 0
-      then (xfork $ spawnCode ("zenity --question --text \"" ++ msg ++ " with " ++ show n ++ " windows open?\"") m) >> return ()
-      else waitDropbox >> closeWindows >> sleep 1 >> io m
-
-spawnCode :: String -> IO () -> IO ()
-spawnCode cmd m = runCommand cmd >>= waitForProcess >>= ifOK m
-
-ifOK :: Monad m => m () -> ExitCode -> m ()
-ifOK m ExitSuccess = m
-ifOK _ _           = return ()
-
 -- | Close all open windows in all workspaces
 closeWindows :: X ()
-closeWindows = withWindowSet (mapM_ killWindow . allWindows)
-
+closeWindows = do
+    withWindowSet (mapM_ killWindow . allWindows)
+    waitDropbox
+    -- wait for all the windows to close
+    -- Does this actually work?
+    withDisplay (\d -> io $ sync d False) 
 -- | Wait for Dropbox to finish syncing
 waitDropbox :: X Bool
 waitDropbox = runProcessWithInput "dropbox" ["status"] "" >>= \case
@@ -186,14 +152,10 @@ waitDropbox = runProcessWithInput "dropbox" ["status"] "" >>= \case
         "Dropbox isn't running!\n" -> return False       -- Dropbox isn't running, no need to wait
         _ -> io (threadDelay $ seconds 3) >> waitDropbox -- Otherwise wait 3 seconds and try again
 
--- | sleep t seconds
-sleep :: Float -> X ()
-sleep = io . threadDelay . seconds
-
 -- | convert seconds to microsecond
 seconds :: Float -> Int
 seconds n = floor $ n * 10**6
 
 -- | Get the number of open windows
 windowCount :: X Int
-windowCount = withWindowSet (return . length . allWindows)
+windowCount = gets (length . allWindows . windowset)

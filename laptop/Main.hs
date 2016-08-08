@@ -3,13 +3,11 @@ module Main where
 import Control.Monad
 import Data.List
 import Data.Tree
-import Data.Tree.Zipper
 import XMonad
 import XMonad.Tom
-import XMonad.Tom.UI.Dialog
-import XMonad.Tom.Workspace
 import XMonad.Tom.XMobarHs as XMobar
 import XMonad.Util.EZConfig
+import XMonad.Actions.TreeSelect
 
 main :: IO ()
 main = do
@@ -19,25 +17,26 @@ main = do
 conf = onStartup doBG
      . fixJava
      . withWSTree myTree
-     . flip additionalKeysP [ ("M-u", void . runDialogX $ listToTree (Choice "" $ return ())
-           [ Choice "Bright" (spawn "xbacklight -set 99 -time 1; xbacklight -set 100")
-           , Choice "Dim"    (spawn "xbacklight -set 24 -time 1; xbacklight -set 25")
-           , Choice "Wallpaper" doBG
-           ]) ]
+     . flip additionalKeysP [ ("M-u", treeselectAction def
+        [ Node (TSNode "Wallpaper" "Changer to a different wallpaper" doBG) []
+        , Node (TSNode "Bright" "FULL POWER!!"            (spawn "xbacklight -set 100")) []
+        , Node (TSNode "Normal" "Normal Brightness (50%)" (spawn "xbacklight -set 50"))  []
+        , Node (TSNode "Dim"    "Quite dark"              (spawn "xbacklight -set 10"))  []
+        ]
+     )]
      $ myConfig
 
 doBG :: X ()
 doBG = spawn "FractalArt -f $HOME/.fractalart/wallpaper.bmp && feh --bg-fill $HOME/.fractalart/wallpaper.bmp"
 
-myTree :: Tree Workspace
-myTree = idx $ nd "root" [ nd "School" (numbers 0)
-                         , nd "Browser" []
-                         , nd "Home"   (numbers 0)
-                         ]
+myTree :: Forest String
+myTree = [ Node "Browser"     []
+         , Node "Home"        numbers
+         , Node "Programming" numbers
+         , Node "Game"        numbers
+         ]
   where
-    nd x xs = Node (Workspace "" x True) xs
-    numbers n = map (\c -> nd [c] []) . drop n $ ['a'..'f']
-    idx = fmap (\(w, p) -> w{ path = intercalate "." p }) . treePath name
+    numbers = map (\c -> Node [c] []) ['a'..'f']
 
 xmobarconf :: Config
 xmobarconf = XMobar.defaultConfig

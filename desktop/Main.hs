@@ -1,27 +1,26 @@
 module Main where
 
-import Control.Monad
-import Data.List
 import Data.Tree
 import XMonad
 import XMonad.Tom
-import XMonad.Tom.UI.Dialog
-import XMonad.Tom.Workspace
 import XMonad.Tom.XMobarHs as XMobar
 import XMonad.Util.EZConfig
+import XMonad.Actions.TreeSelect
 
 main :: IO ()
 main = do
     export xmobarconf
     xmonad =<< withXMobar titlePP conf
 
-conf = runInWS "firefox" "root.Left.Browser"
-     . runInWS "vlc $HOME/Music/soundclound" "root.Right.Music"
+conf = runInWS "firefox"                     "Left.Browser"
+     . runInWS "vlc $HOME/Music/soundclound" "Right.Music"
      . onStartup doBG
      . dualScreen
      . fixJava
      . withWSTree myTree
-     . flip additionalKeysP [ ("M-u", void . runDialogX $ listToTree (Choice "" $ return ()) [ Choice "Wallpaper" doBG ])]
+     . flip additionalKeysP [ ("M-u", treeselectAction def
+         [ Node (TSNode "Wallpaper" "Changer to a different wallpaper" doBG) []
+         ])]
      $ myConfig
 
 doBG :: X ()
@@ -29,27 +28,24 @@ doBG = spawn "FractalArt -w 1920 -h 1200 -f $HOME/.fractalart/wallpaperL.bmp \
            \& FractalArt -w 1920 -h 1080 -f $HOME/.fractalart/wallpaperR.bmp & wait \
            \&& feh --bg-fill $HOME/.fractalart/wallpaperL.bmp --bg-fill $HOME/.fractalart/wallpaperR.bmp"
 
-myTree :: Tree Workspace
-myTree = idx $ nd "root"
-           [ nd "Left"
-               [ nd "Browser"     []
-               , nd "Programming" $ numbers 0
-               , nd "Home" $ numbers 0
-               , nd "Game" $ numbers 0
-               ]
-           , nd "Right"
-               [ nd "Docs" $ numbers 0
-               , nd "Music" []
-               , nd "Video" []
-               , nd "Steam" []
-               , nd "Skype" []
-               , nd "Telegram" []
-               ]
-           ]
+myTree :: Forest String
+myTree = [ Node "Left"
+             [ Node "Browser"     []
+             , Node "Programming" numbers
+             , Node "Home"        numbers
+             , Node "Game"        numbers
+             ]
+         , Node "Right"
+             [ Node "Docs"     numbers
+             , Node "Music"    []
+             , Node "Video"    []
+             , Node "Steam"    []
+             , Node "Skype"    []
+             , Node "Telegram" []
+             ]
+         ]
   where
-    nd x = Node (Workspace "" x True)
-    numbers n = map (\c -> nd [c] []) . drop n $ ['a'..'f']
-    idx = fmap (\(w, p) -> w{ path = intercalate "." p }) . treePath name
+    numbers = map (\c -> Node [c] []) ['a'..'f']
 
 xmobarconf :: XMobar.Config
 xmobarconf = XMobar.defaultConfig
