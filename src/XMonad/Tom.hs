@@ -20,6 +20,7 @@ import XMonad.Layout.NoBorders          (smartBorders)
 import XMonad.StackSet                  as W hiding (workspaces)
 import XMonad.Util.EZConfig             (additionalKeysP, additionalKeys)
 import XMonad.Util.Run                  (runProcessWithInput)
+import qualified XMonad.Hooks.ICCCMFocus as ICCCMFocus
 
 import qualified XMonad.Tom.XMobarHs          as BU
 
@@ -62,7 +63,7 @@ myConfig = ewmh $ fullscreenSupport $ myKeys $ defaultConfig
     , manageHook        = manageSpawn <+> manageDocks
     , handleEventHook   = docksEventHook
     , layoutHook        = myLayout
-    , logHook           = dynamicLogWithPP defaultPP
+    , logHook           = dynamicLogWithPP defaultPP <+> ICCCMFocus.takeTopFocus
     , focusFollowsMouse = False
     , borderWidth       = 2
     , modMask           = mod1Mask
@@ -144,7 +145,8 @@ closeWindows = do
     waitDropbox
     -- wait for all the windows to close
     -- Does this actually work?
-    withDisplay (\d -> io $ sync d False) 
+    withDisplay (\d -> io $ sync d False)
+
 -- | Wait for Dropbox to finish syncing
 waitDropbox :: X Bool
 waitDropbox = runProcessWithInput "dropbox" ["status"] "" >>= \case
