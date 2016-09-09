@@ -2,6 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module XMonad.Tom where
 
+import Control.Applicative
+import Control.Monad.Reader
+import Control.Monad.State
 import Control.Concurrent               (threadDelay)
 import Control.Monad
 import Data.Tree
@@ -14,6 +17,7 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops        (ewmh)
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.SetWMName
+import XMonad.Hooks.WorkspaceHistory
 import XMonad.Layout.Fullscreen         (fullscreenSupport)
 import XMonad.Layout.LayoutModifier
 import XMonad.Layout.NoBorders          (smartBorders)
@@ -23,6 +27,7 @@ import XMonad.Util.Run                  (runProcessWithInput)
 import qualified XMonad.Hooks.ICCCMFocus as ICCCMFocus
 
 import qualified XMonad.Tom.XMobarHs          as BU
+import qualified Data.Map as M
 
 -- | This PP only shows the current title of the focused Window.
 titlePP = defaultPP { ppCurrent         = hlLast
@@ -47,7 +52,7 @@ myLayout = avoidStruts  -- Don't cover the statusbar
 
 -- | The available layouts.  Note that each layout is separated by |||, which
 -- denotes layout choice.
-modes = Mirror tiled ||| tiled ||| Full
+modes = tiled ||| Mirror tiled ||| Full
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
@@ -63,7 +68,7 @@ myConfig = ewmh $ fullscreenSupport $ myKeys $ defaultConfig
     , manageHook        = manageSpawn <+> manageDocks
     , handleEventHook   = docksEventHook
     , layoutHook        = myLayout
-    , logHook           = dynamicLogWithPP defaultPP <+> ICCCMFocus.takeTopFocus
+    , logHook           = dynamicLogWithPP defaultPP <+> ICCCMFocus.takeTopFocus <+> workspaceHistoryHook
     , focusFollowsMouse = False
     , borderWidth       = 2
     , modMask           = mod1Mask
@@ -71,9 +76,7 @@ myConfig = ewmh $ fullscreenSupport $ myKeys $ defaultConfig
 
 withWSTree t conf = conf { workspaces = toWorkspaces t }
     `additionalKeysP` [ ("M-r",   treeselectWorkspace def t W.greedyView) -- Go to workspace with treeselect
-                      , ("M-S-r", treeselectWorkspace def t W.shift)  -- Move and go to workspace with treeselect
-                      -- , ("M-o",   WSH.doUndo)  -- Go back to the last Workspace
-                      -- , ("M-i",   WSH.doRedo)  -- Go foreward in your undo history
+                      , ("M-S-r", treeselectWorkspace def t (\i -> W.greedyView i . W.shift i))  -- Move and go to workspace with treeselect
                       ]
 
 screenID :: X ScreenId
@@ -86,6 +89,7 @@ myKeys conf = conf `additionalKeysP` [ -- dmenu to lauch commands, j4-dmenu to l
          -- media controls
          , ("M-f",   spawn "amixer set Capture toggle")
          , ("M-S-f", spawn "amixer set Master toggle")
+         , ("M-S-l", spawn "slock")
 
          -- xmonad actions
          , ("M-S-q", do n <- windowCount
